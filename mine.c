@@ -8,12 +8,18 @@ int exec(char *argv[], char *envp[], int end);
 void set_w_pipe(int *fd, int has_pipe);
 void set_r_pipe(int *fd, int has_pipe);
 
-void print(char *message, int fd)
+void print_error(char *message, char *cmd, int fd)
 {
 	int i = 0;
 	while (message[i])
 		i++;
 	write(fd, message, i);
+	write(fd, " ", 1);
+	i = 0;
+	while (cmd[i])
+		i++;
+	write(fd, cmd, i);
+	write(fd, "\n", 1);
 }
 
 int has_pipe(char *argv[])
@@ -60,11 +66,7 @@ int main(int argc, char *argv[], char *envp[])
 int simple_exec(char *argv[], char *envp[])
 {
 	if (execve(*argv, argv, envp) != 0)
-	{
-		print("error: cannot execute ", STDERR_FILENO);
-		print(*argv, STDERR_FILENO);
-		print("\n", STDERR_FILENO);
-	}
+		print_error("error: cannot execute", *argv, STDERR_FILENO);
 	exit (1);
 }
 
@@ -84,9 +86,7 @@ int exec(char *argv[], char *envp[], int end)
 		set_w_pipe(fd, has_pipe);
 		if (execve(*argv, argv, envp) != 0)
 		{
-			print("error: cannot execute ", STDERR_FILENO);
-			print(*argv, STDERR_FILENO);
-			print("\n", STDERR_FILENO);
+			print_error("error: cannot execute", *argv, STDERR_FILENO);
 			exit(1);
 		}
 	}
