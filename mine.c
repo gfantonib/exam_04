@@ -5,6 +5,8 @@
 
 int simple_exec(char *argv[], char *envp[]);
 int exec(char *argv[], char *envp[], int end);
+void set_w_pipe(int *fd, int has_pipe);
+void set_r_pipe(int *fd, int has_pipe);
 
 void print(char *message, int fd)
 {
@@ -68,21 +70,46 @@ int simple_exec(char *argv[], char *envp[])
 
 int exec(char *argv[], char *envp[], int end)
 {
+	int fd[2];
+
 	int has_pipe = 0;
 	if (argv[end] && argv[end][0] == '|')
 	{
-		printf("has pipe\n");
 		has_pipe = 1;
+		pipe(fd);
 	}
-	// argv[end] = 0;
-
-
-
-	// if (execve(*argv, argv, envp) != 0)
-	// {
-	// 	print("error: cannot execute ", STDERR_FILENO);
-	// 	print(*argv, STDERR_FILENO);
-	// 	print("\n", STDERR_FILENO);
-	// }
+	if (fork() == 0)
+	{
+		argv[end] = 0;
+		set_w_pipe(fd, has_pipe);
+		if (execve(*argv, argv, envp) != 0)
+		{
+			print("error: cannot execute ", STDERR_FILENO);
+			print(*argv, STDERR_FILENO);
+			print("\n", STDERR_FILENO);
+			exit(1);
+		}
+	}
+	set_r_pipe(fd, has_pipe);
 	return (0);
+}
+
+void set_w_pipe(int *fd, int has_pipe)
+{
+	if (has_pipe)
+	{
+		dup2(fd[1], STDOUT_FILENO);
+		close(fd[0]);
+		close(fd[1]);
+	}
+}
+
+void set_r_pipe(int *fd, int has_pipe)
+{
+	if (has_pipe)
+	{
+		dup2(fd[0], STDIN_FILENO);
+		close(fd[0]);
+		close(fd[1]);
+	}
 }
