@@ -21,12 +21,12 @@ void print_error(char *wrong_cmd, int fd)
 	write(fd, "\n", 1);
 }
 
-int has_pipe(char *argv[])
+int has_op(char *argv[])
 {
 	int i = 0;
 	while (argv[i])
 	{
-		if (argv[i][0] == '|' && !argv[i][1])
+		if ((argv[i][0] == '|' || argv[i][0] == ';') && !argv[i][1])
 			return (1);
 		i++;
 	}
@@ -40,6 +40,13 @@ int is_pipe(char *str)
 	return (0);
 }
 
+int is_semi(char *str)
+{
+	if (str[0] == ';' && !str[1])
+		return (1);
+	return (0);
+}
+
 int main(int argc, char *argv[], char *envp[])
 {
 	int status = 0;
@@ -48,13 +55,13 @@ int main(int argc, char *argv[], char *envp[])
 	argv++;
 	if (!*argv)
 		return (0);
-	if (!has_pipe(argv))
+	if (!has_op(argv))
 		simple_exec(argv, envp);
 
 	while (*argv)
 	{
 		i = 0;
-		while (argv[i] && !is_pipe(argv[i]))
+		while (argv[i] && !is_pipe(argv[i]) && !is_semi(argv[i]))
 			i++;
 		status = exec(argv, envp, i);
 		argv = &argv[i] + (argv[i] != NULL);
