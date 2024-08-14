@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <stdio.h>
 #include <sys/wait.h>
 
 int simple_exec(char *argv[], char *envp[]);
@@ -53,9 +52,9 @@ int main(int argc, char *argv[], char *envp[])
 	int status = 0;
 	int i = 0;
 
-	argv++;
-	if (!*argv)
+	if (argc == 1)
 		return (0);
+	argv++;
 	if (!has_op(argv))
 		simple_exec(argv, envp);
 
@@ -95,6 +94,8 @@ int exec(char *argv[], char *envp[], int end)
 	{
 		argv[end] = 0;
 		set_w_pipe(fd, has_pipe);
+		if (!strcmp(*argv, "cd"))
+			exit (cd(argv));
 		if (execve(*argv, argv, envp) != 0)
 		{
 			print_error(*argv, STDERR_FILENO);
