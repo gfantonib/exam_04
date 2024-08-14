@@ -2,6 +2,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <sys/wait.h>
 
 int simple_exec(char *argv[], char *envp[]);
 int exec(char *argv[], char *envp[], int end);
@@ -71,6 +72,7 @@ int simple_exec(char *argv[], char *envp[])
 int exec(char *argv[], char *envp[], int end)
 {
 	int fd[2];
+	int status;
 
 	int has_pipe = 0;
 	if (argv[end] && argv[end][0] == '|')
@@ -78,7 +80,8 @@ int exec(char *argv[], char *envp[], int end)
 		has_pipe = 1;
 		pipe(fd);
 	}
-	if (fork() == 0)
+	int pid = fork();
+	if (pid == 0)
 	{
 		argv[end] = 0;
 		set_w_pipe(fd, has_pipe);
@@ -88,8 +91,9 @@ int exec(char *argv[], char *envp[], int end)
 			exit(1);
 		}
 	}
+	waitpid(pid, &status, 0);
 	set_r_pipe(fd, has_pipe);
-	return (0);
+	return WIFEXITED(status) && WEXITSTATUS(status);
 }
 
 void set_w_pipe(int *fd, int has_pipe)
