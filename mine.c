@@ -8,6 +8,7 @@ int simple_exec(char *argv[], char *envp[]);
 int exec(char *argv[], char *envp[], int end);
 void set_w_pipe(int *fd, int has_pipe);
 void set_r_pipe(int *fd, int has_pipe);
+int cd(char *argv[]);
 
 void print_error(char *wrong_cmd, int fd)
 {
@@ -71,6 +72,8 @@ int main(int argc, char *argv[], char *envp[])
 
 int simple_exec(char *argv[], char *envp[])
 {
+	if (!strcmp(*argv, "cd"))
+		exit (cd(argv));
 	if (execve(*argv, argv, envp) != 0)
 		print_error(*argv, STDERR_FILENO);
 	exit (1);
@@ -121,4 +124,29 @@ void set_r_pipe(int *fd, int has_pipe)
 		close(fd[0]);
 		close(fd[1]);
 	}
+}
+
+void cd_error(char *wrong_path)
+{
+	write(STDERR_FILENO, "error: cd: cannot change directory to ", 38);
+	int i = 0;
+	while (wrong_path[i])
+		i++;
+	write(STDERR_FILENO, wrong_path, i);
+	write(STDERR_FILENO, "\n", 1);
+}
+
+int cd(char *argv[])
+{
+	if (argv[0] && argv[1] && !argv[2])
+	{
+		if (chdir(argv[1]) == -1)
+		{
+			cd_error(argv[1]);
+			return (1);
+		}
+		return (0);
+	}
+	write(STDERR_FILENO, "error: cd: bad arguments\n", 25);
+	return (1);
 }
